@@ -28,16 +28,11 @@ with open(anchors_new_file) as f:
 
 def merge_sets(set_list):
     for i in range(len(set_list)):
-        # 添加判定条件
-        # 如果集合元素的前三个字母不同，则跳过后续处理
         if any(set_list[i][0][:3] != set_list[j][0][:3] for j in range(i+1, len(set_list))):
             continue
-
         for j in range(i+1, len(set_list)):
             set1 = set(set_list[i])
             set2 = set(set_list[j])
-
-            # 判断是否存在子集关系，如果是，则合并集合
             if set1.issubset(set2) or set2.issubset(set1):
                 set_list[i] = list(set1.union(set2))
                 set_list[j] = list(set2.union(set1))
@@ -45,8 +40,6 @@ def merge_sets(set_list):
                 intersection = set1 & set2
                 union = set1 | set2
                 overlap = len(intersection) / len(union)
-
-                # 判断重叠率是否大于0.5，如果是，则合并集合
                 if overlap > 0.5:
                     set_list[i] = list(union)
                     set_list[j] = list(union)
@@ -67,20 +60,15 @@ for index, row in df.iterrows():
 
 set_list_a1 = merge_sets(set_list_a)
 set_list_b1 = merge_sets(set_list_b)
-
 series1 = pd.Series(set_list_a1, name='block1')
 series2 = pd.Series(set_list_b1, name='block2')
 series3 = pd.Series(score_average_list, name='score')
-df_block1 = pd.concat([series1,series2,series3],axis=1)
-#df_block1.to_csv(str(vorchor)+'final_anchor_new_block4.csv',sep='\t',index=None)
-
-
+df_block = pd.concat([series1,series2,series3],axis=1)
 
 simple_block1 = []
 simple_block2 = []
 block_imap = pd.DataFrame()
-
-for index, row in block.iterrows():
+for index, row in df_block.iterrows():
     block1 = str(sorted(eval(row['block1']))[0]) + ":" + str(sorted(eval(row['block1']))[-1])
     block2 = str(sorted(eval(row['block2']))[0]) + ":" + str(sorted(eval(row['block2']))[-1])
     simple_block1.append(block1)
@@ -96,21 +84,17 @@ for index, row in block.iterrows():
         'length': len(eval(row['block2']))
     }, ignore_index=True)
 
-# 给新的 DataFrame 添加列名
 block_simple = pd.DataFrame({'simple_block1': simple_block1, 'simple_block2': simple_block2})
 block_imap.columns = ['block', 'details', 'length']
 
 block_imap_uniq = block_imap.loc[block_imap.groupby('block')['length'].idxmax()]
-#block_imap_uniq
 
 imap_dic = dict(zip(block_imap_uniq['block'],block_imap_uniq['details']))
-#imap_dic
 
 G =nx.Graph()
 for index, row in block_simple.iterrows():
     Block1=row["simple_block1"]
     Block2=row["simple_block2"]
-    #sorce =row["score"]
     G.add_edge(Block1,Block2)
 
 
@@ -126,7 +110,7 @@ with open("path_output.txt", "w") as f:
             if not neighbors:
                 break
             next_node = None
-            max_length = -1  # 用于记录当前已访问节点路径的最大长度
+            max_length = -1  
             for neighbor in neighbors:
                 if neighbor not in visited and neighbor[:3] != current_node[:3] and len(neighbor) > max_length:
                     next_node = neighbor
